@@ -1,0 +1,3 @@
+cd packages/core && bun run build
+cd ../svelte && bun run build
+cd ../react && bun run build

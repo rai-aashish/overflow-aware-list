@@ -1,0 +1,113 @@
+# overflow-aware-list
+
+> A monorepo of packages that render only the items that physically fit inside a container — measured with ResizeObserver — and pass the overflow to a render prop/snippet for a "+N" badge, ellipsis, or any custom indicator. Zero dependencies. Works horizontally and vertically, and supports slicing from either end of the list.
+
+- GitHub: https://github.com/rai-aashish/overflow-aware-list
+- React demo: https://rai-aashish.github.io/overflow-aware-list/react/
+- Svelte demo: https://rai-aashish.github.io/overflow-aware-list/svelte
+
+## Packages
+
+| Package | npm | Description |
+|---|---|---|
+| `@overflow-aware-list/core` | `npm install @overflow-aware-list/core` | Framework-agnostic controller + pure computation functions |
+| `@overflow-aware-list/react` | `npm install @overflow-aware-list/react` | React 18/19 component |
+| `@overflow-aware-list/svelte` | `npm install @overflow-aware-list/svelte` | Svelte 5 component |
+
+## Detailed docs per package
+
+- [packages/core/llms.txt](packages/core/llms.txt) — types, `OverflowListController` API, pure functions, custom integration guide
+- [packages/react/llms.txt](packages/react/llms.txt) — `<OverflowList>` props, usage examples, styling, implementation notes
+- [packages/svelte/llms.txt](packages/svelte/llms.txt) — `<OverflowList>` props, snippet API, usage examples, styling, Svelte 5 notes
+
+## Core concept
+
+All packages share the same two-render-pass design:
+
+1. **Visible container** — `overflow: hidden`, shows only the items that fit (`visibleItems`).
+2. **Off-screen measurement layer** — `position: absolute; visibility: hidden; left: -9999px` — renders *all* items so `ResizeObserver` can measure their natural sizes.
+
+The `OverflowListController` (in `core`) reads sizes from the off-screen layer and calls `onStateChange` with:
+
+```ts
+{
+  visibleItems: T[];   // items to render in the visible container
+  hiddenItems: T[];    // items to pass to the overflow indicator
+  isOverflowing: boolean;
+  startIndex: number;  // index into original array where visible slice starts
+  measured: boolean;   // false until first measurement completes
+}
+```
+
+Framework wrappers are thin shells around this controller.
+
+## sliceFrom
+
+- `"start"` (default) — keep first N items, overflow indicator at **end**. Good for tag clouds, nav links.
+- `"end"` — keep last N items, overflow indicator at **start**. Good for breadcrumbs, file paths.
+
+## Quick start — React
+
+```tsx
+import { OverflowList } from "@overflow-aware-list/react";
+
+<OverflowList
+  items={tags}
+  renderItem={(tag) => <span className="tag">{tag}</span>}
+  renderMore={(hidden) => <span>+{hidden.length}</span>}
+/>
+```
+
+## Quick start — Svelte 5
+
+```svelte
+<script>
+  import { OverflowList } from "@overflow-aware-list/svelte";
+</script>
+
+<OverflowList items={tags}>
+  {#snippet renderItem(tag)}<span class="tag">{tag}</span>{/snippet}
+  {#snippet renderMore(hidden)}<span>+{hidden.length}</span>{/snippet}
+</OverflowList>
+```
+
+## Quick start — custom framework (using core directly)
+
+```ts
+import { OverflowListController } from "@overflow-aware-list/core";
+
+const controller = new OverflowListController({
+  items,
+  direction: "horizontal", // or "vertical"
+  sliceFrom: "start",       // or "end"
+  onStateChange: (state) => render(state),
+});
+
+controller.mountContainer(containerEl);
+items.forEach((_, i) => controller.registerItemElement(i, offScreenItemEls[i]));
+controller.registerMoreElement(offScreenMoreEl);
+
+// on prop change:
+controller.updateOptions({ items: newItems });
+
+// on unmount:
+controller.destroy();
+```
+
+## Monorepo structure
+
+```
+packages/
+  core/     @overflow-aware-list/core    — framework-agnostic
+  react/    @overflow-aware-list/react   — React wrapper
+  svelte/   @overflow-aware-list/svelte  — Svelte 5 wrapper
+apps/
+  react-demo/   — demo app (uses @overflow-aware-list/react)
+  svelte-demo/  — demo app (uses @overflow-aware-list/svelte)
+```
+
+Build tool: Bun workspaces. `core` must be built before framework packages.
+
+## SSR
+
+All components initialise with all items visible (safe for server rendering). The client trims after the first `ResizeObserver` callback. `state.measured` is `false` until that first measurement.

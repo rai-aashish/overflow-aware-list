@@ -1,0 +1,31 @@
+{
+  "name": "@overflow-aware-list/core",
+  "version": "0.1.1",
+  "description": "Framework-agnostic core logic for overflow-aware list",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "clean": "rm -rf dist",
+    "test": "bun test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rai-aashish/overflow-aware-list.git",
+    "directory": "packages/core"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  }
+}

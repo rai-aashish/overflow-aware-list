@@ -1,0 +1,177 @@
+# @overflow-aware-list/core
+
+> Framework-agnostic core logic for measuring container width/height and computing which items in a list fit within a fixed boundary. Zero dependencies. Used internally by `@overflow-aware-list/react` and `@overflow-aware-list/svelte`; also consumable directly for custom framework integrations.
+
+- GitHub: https://github.com/rai-aashish/overflow-aware-list/tree/main/packages/core
+- React demo: https://rai-aashish.github.io/overflow-aware-list/react/
+- Svelte demo: https://rai-aashish.github.io/overflow-aware-list/svelte
+
+## Overview
+
+The core package exposes two things:
+
+1. **Pure computation functions** — given pixel sizes, return how many items fit and which slice to show.
+2. **`OverflowListController`** — a class that wires `ResizeObserver` instances to a container element, off-screen item elements, and a "more" indicator element, then calls a callback whenever the visible/hidden split changes.
+
+The controller never touches the DOM beyond reading sizes — all rendering is left to the framework wrapper.
+
+## Installation
+
+```bash
+npm install @overflow-aware-list/core
+```
+
+## Key concepts
+
+### Two-render-pass pattern
+
+Framework wrappers render items twice:
+
+- **Visible container** — clipped with `overflow: hidden`, shows only `visibleItems`.
+- **Off-screen measurement layer** — `position: absolute; visibility: hidden; left: -9999px` — renders *all* items at natural size so the controller can measure them.
+
+The controller reads sizes from the off-screen layer and tells the framework how many items fit.
+
+### sliceFrom
+
+- `"start"` (default) — show first N items, hide the rest, put the "more" indicator at the **end**.
+- `"end"` — show last N items (ideal for breadcrumbs/paths), hide earlier items, put the "more" indicator at the **start**.
+
+### measured flag
+
+`OverflowListState.measured` is `false` until the first recompute completes. Use it to avoid a flash of incorrectly-sized content on first render.
+
+## Types
+
+```ts
+type Direction = "horizontal" | "vertical";
+type SliceFrom = "start" | "end";
+
+interface OverflowListState<T> {
+  visibleItems: T[];
+  hiddenItems: T[];
+  isOverflowing: boolean;
+  /** Index into `items` where the visible slice begins. Always 0 when sliceFrom="start". */
+  startIndex: number;
+  /** False until the first measurement completes. */
+  measured: boolean;
+}
+
+interface OverflowListOptions<T> {
+  items: T[];
+  direction?: Direction;       // default: "horizontal"
+  sliceFrom?: SliceFrom;       // default: "start"
+  /** Called synchronously whenever visible/hidden state changes. */
+  onStateChange: (state: OverflowListState<T>) => void;
+}
+```
+
+## OverflowListController
+
+### Constructor
+
+```ts
+const controller = new OverflowListController<T>(options: OverflowListOptions<T>)
+```
+
+### Element registration
+
+```ts
+// Register the visible/clip container. Observes it for size changes.
+controller.mountContainer(el: HTMLElement | null): void
+
+// Register the off-screen measurement element for item at `index`.
+controller.registerItemElement(index: number, el: HTMLElement | null): void
+
+// Register the off-screen measurement element for the "more" indicator.
+controller.registerMoreElement(el: HTMLElement | null): void
+```
+
+Pass `null` to any of these to unregister and disconnect the observer.
+
+### Updating options
+
+```ts
+// Call when items, direction, or sliceFrom props change.
+controller.updateOptions(partial: {
+  items?: T[];
+  direction?: Direction;
+  sliceFrom?: SliceFrom;
+}): void
+```
+
+Only triggers a recompute if a value actually changed.
+
+### Recompute
+
+```ts
+// Schedules a recompute on the next animation frame (batches rapid calls).
+// Called automatically by ResizeObserver callbacks.
+controller.recompute(): void  // synchronous, immediate
+```
+
+### Cleanup
+
+```ts
+// Disconnects all ResizeObservers and cancels any pending RAF. Safe to call multiple times.
+controller.destroy(): void
+```
+
+## Pure computation functions
+
+These are exported for testing or custom integrations.
+
+```ts
+// Returns the inner content size of `el` along `direction` (excludes padding + border).
+getAvailableSize(el: HTMLElement, direction: Direction): number
+
+// Returns the flex/grid gap between children along `direction`. Returns 0 for "normal".
+getGap(el: HTMLElement, direction: Direction): number
+
+// Given item pixel sizes, returns how many fit in `availableSize`.
+// When items overflow, `moreSize` pixels are reserved for the "more" indicator.
+computeVisibleCount(
+  availableSize: number,
+  sizes: number[],
+  moreSize: number,
+  gap: number
+): number
+
+// Splits `items` into visible/hidden slices given `visibleCount` and `sliceFrom`.
+computeSlice<T>(
+  items: T[],
+  visibleCount: number,
+  sliceFrom: SliceFrom
+): { visibleItems: T[]; hiddenItems: T[]; startIndex: number; isOverflowing: boolean }
+```
+
+## Custom framework integration example
+
+```ts
+import { OverflowListController } from "@overflow-aware-list/core";
+
+// 1. Create controller
+const controller = new OverflowListController({
+  items: myItems,
+  direction: "horizontal",
+  sliceFrom: "start",
+  onStateChange: (state) => {
+    // re-render with state.visibleItems / state.hiddenItems
+  },
+});
+
+// 2. After mounting DOM elements:
+controller.mountContainer(containerEl);
+items.forEach((_, i) => controller.registerItemElement(i, offScreenItemEls[i]));
+controller.registerMoreElement(offScreenMoreEl);
+
+// 3. On prop changes:
+controller.updateOptions({ items: newItems });
+
+// 4. On unmount:
+controller.destroy();
+```
+
+## SSR behaviour
+
+When `ResizeObserver` and `requestAnimationFrame` are unavailable (server-side), the controller skips observation and falls back to a synchronous no-op. `measured` remains `false`. Framework wrappers should render the full item list on the server so the page is usable before JS hydrates.

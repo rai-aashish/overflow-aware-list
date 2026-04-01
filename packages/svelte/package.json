@@ -1,0 +1,42 @@
+{
+  "name": "@overflow-aware-list/svelte",
+  "version": "0.1.1",
+  "description": "Svelte 5 component for overflow-aware list",
+  "type": "module",
+  "svelte": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "svelte": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "svelte-package -i src",
+    "typecheck": "svelte-check --tsconfig tsconfig.json",
+    "clean": "rm -rf dist",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@overflow-aware-list/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rai-aashish/overflow-aware-list.git",
+    "directory": "packages/svelte"
+  },
+  "devDependencies": {
+    "@sveltejs/package": "^2.0.0",
+    "svelte": "^5.0.0",
+    "svelte-check": "^4.0.0",
+    "typescript": "^5.8.0"
+  }
+}

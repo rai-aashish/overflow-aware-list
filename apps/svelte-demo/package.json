@@ -1,0 +1,29 @@
+{
+  "name": "@overflow-aware-list/svelte-demo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@overflow-aware-list/svelte": "workspace:*",
+    "@tailwindcss/vite": "^4.2.2",
+    "bits-ui": "^2.16.5",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^4.2.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rai-aashish/overflow-aware-list.git",
+    "directory": "apps/svelte-demo"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "svelte": "^5.0.0",
+    "vite": "^6.0.0"
+  }
+}

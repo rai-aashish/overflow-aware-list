@@ -1,0 +1,96 @@
+name: Deploy demo to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build core
+        working-directory: packages/core
+        run: bun run build
+
+      - name: Build react package
+        working-directory: packages/react
+        run: bun run build
+
+      - name: Build svelte package
+        working-directory: packages/svelte
+        run: bun run build
+
+      - name: Build react demo
+        working-directory: apps/react-demo
+        env:
+          BASE_URL: /overflow-aware-list/react/
+        run: bun run build
+
+      - name: Build svelte demo
+        working-directory: apps/svelte-demo
+        env:
+          BASE_URL: /overflow-aware-list/svelte/
+        run: bun run build
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site/react _site/svelte
+          cp -r apps/react-demo/dist/. _site/react/
+          cp -r apps/svelte-demo/dist/. _site/svelte/
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>overflow-aware-list demos</title>
+            <style>
+              body { font-family: monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #0d0d0d; color: #e5e5e5; gap: 2rem; }
+              h1 { font-size: 1.5rem; letter-spacing: -0.02em; }
+              .links { display: flex; gap: 1rem; }
+              a { padding: 0.6rem 1.4rem; border: 1px solid #444; border-radius: 6px; color: inherit; text-decoration: none; transition: border-color 0.15s; }
+              a:hover { border-color: #e5e5e5; }
+            </style>
+          </head>
+          <body>
+            <h1>overflow-aware-list</h1>
+            <div class="links">
+              <a href="./react/">React demo</a>
+              <a href="./svelte/">Svelte demo</a>
+            </div>
+          </body>
+          </html>
+          EOF
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deploy

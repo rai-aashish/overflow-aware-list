@@ -1,0 +1,180 @@
+# @overflow-aware-list/react
+
+> React component that renders only the items that physically fit inside a container. Items that overflow are hidden and passed to a `renderMore` render prop so you can show a "+N" badge, ellipsis, or any custom indicator. Supports horizontal and vertical directions, and can slice from either end of the list.
+
+- GitHub: https://github.com/rai-aashish/overflow-aware-list/tree/main/packages/react
+- Live demo: https://rai-aashish.github.io/overflow-aware-list/react/
+
+## Installation
+
+```bash
+npm install @overflow-aware-list/react
+```
+
+Peer dependency: `react >= 18`.
+
+## Quick start
+
+```tsx
+import { OverflowList } from "@overflow-aware-list/react";
+
+<OverflowList
+  items={tags}
+  renderItem={(tag, i) => <span key={i} className="tag">{tag.label}</span>}
+  renderMore={(hidden) => <span className="badge">+{hidden.length}</span>}
+/>
+```
+
+The container fills `width: 100%`. Items that don't fit are hidden; `hidden` in `renderMore` is the array of items that were cut.
+
+## Props
+
+```ts
+type OverflowListProps<T> = {
+  /** Array of items to display. */
+  items: T[];
+
+  /** Layout axis. Default: "horizontal". */
+  direction?: "horizontal" | "vertical";
+
+  /**
+   * Which end to keep visible when overflow occurs.
+   * "start" — show first N items, overflow indicator at end (default).
+   * "end"   — show last N items, overflow indicator at start (useful for breadcrumbs).
+   */
+  sliceFrom?: "start" | "end";
+
+  /** Render a single visible item. Receives the item and its original index in `items`. */
+  renderItem: (item: T, index: number) => ReactNode;
+
+  /**
+   * Render the overflow indicator. Receives the array of hidden items.
+   * Also rendered (with an empty array) in the off-screen measurement layer
+   * so its size is always accounted for.
+   */
+  renderMore: (hidden: T[]) => ReactNode;
+  /**
+   * HTML tag for the outer container element. Default: "div".
+   * Generic — rest props and ref narrow to match the chosen tag.
+   * @example renderAs="nav"     // ref: HTMLElement, restProps: nav attrs
+   * @example renderAs="button"  // ref: HTMLButtonElement, restProps: button attrs
+   */
+  renderAs?: As;
+} & Omit<HTMLAttributes<HTMLElementTagNameMap[As]>, "children">;
+// As defaults to "div". Rest props and ref narrow automatically when renderAs is set.
+// ref is forwarded — pass a ref object or callback ref and it merges with the internal controller ref.
+```
+
+## Usage examples
+
+### Horizontal tag row with "+N" badge
+
+```tsx
+const tags = ["React", "TypeScript", "Vite", "Tailwind", "Zustand"];
+
+<div style={{ width: "300px" }}>
+  <OverflowList
+    items={tags}
+    renderItem={(tag) => <span className="tag">{tag}</span>}
+    renderMore={(hidden) => <span className="badge">+{hidden.length}</span>}
+  />
+</div>
+```
+
+### Breadcrumb — show deepest path segments
+
+```tsx
+const crumbs = ["~", "projects", "overflow-aware-list", "packages", "core"];
+
+<OverflowList
+  items={crumbs}
+  direction="horizontal"
+  sliceFrom="end"
+  renderItem={(crumb, i) => (
+    <span className="crumb">
+      {i > 0 && <span>/</span>}
+      {crumb}
+    </span>
+  )}
+  renderMore={(hidden) => <span>/…{hidden.length}/</span>}
+/>
+```
+
+### Vertical notification feed
+
+```tsx
+<div style={{ height: "160px" }}>
+  <OverflowList
+    items={notifications}
+    direction="vertical"
+    renderItem={(n) => <div className="notif">{n.text}</div>}
+    renderMore={(hidden) => <div>+{hidden.length} more</div>}
+  />
+</div>
+```
+
+### Custom container tag with typed ref
+
+```tsx
+const navRef = useRef<HTMLElement>(null);
+
+<OverflowList
+  renderAs="nav"
+  ref={navRef}
+  items={crumbs}
+  renderItem={(c) => <span>{c}</span>}
+  renderMore={(h) => <span>+{h.length}</span>}
+/>
+```
+
+### Forwarded ref (plain div)
+
+```tsx
+const ref = useRef<HTMLDivElement>(null);
+
+<OverflowList ref={ref} items={tags} renderItem={...} renderMore={...} />
+```
+
+### Hide content until measured (no layout flash)
+
+```tsx
+// renderItem receives the original index; use listState.measured if you need it.
+// The component initialises with all items visible (SSR-safe), then trims on first paint.
+// If you want to suppress the untrimmed flash, wrap with visibility:hidden until stable:
+<div style={{ visibility: measured ? "visible" : "hidden" }}>
+  <OverflowList ... />
+</div>
+```
+
+## Styling
+
+The component renders a `<{renderAs} data-slot="overflow-list">` as the container (default `<div>`). It forces these styles (you cannot override them):
+
+```
+display: flex
+align-items: start
+justify-content: start
+overflow: hidden
+flex-direction: row | column   (from direction prop)
+width: 100%                    (horizontal only)
+height: 100%                   (vertical only)
+```
+
+All other styles and class names you pass are applied first, then the above override. Set `gap` via `className` or `style` — the component reads it from computed styles to account for it in size calculations.
+
+Each item is wrapped in `<div data-overflow-item style="flex-shrink:0">`.
+
+## How it works
+
+1. Two render passes: visible container (clipped) + off-screen measurement layer (hidden, all items).
+2. `ResizeObserver` watches the container, each item, and the "more" indicator.
+3. On any size change, the controller computes how many items fit and calls `setState`.
+4. React re-renders with the new `visibleItems` / `hiddenItems` split.
+
+The off-screen layer is `position: absolute; visibility: hidden; left: -9999px` so it never affects layout.
+
+## Implementation notes
+
+- Controller is created once (`useEffect` with `[]`). Ref callbacks fire during commit (before `useEffect`) so element registration is deferred until the effect runs and then backfilled.
+- `updateOptions` is called in a separate effect keyed on `[items, direction, sliceFrom]` — this keeps the initial effect stable and avoids re-creating the controller on prop changes.
+- Item ref callbacks are memoised per-index in a `Map` to avoid unnecessary re-renders.
