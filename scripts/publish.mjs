@@ -74,7 +74,10 @@ for (const pkg of PACKAGES) {
     console.log(`\nPublishing ${json.name}@${json.version}…`);
     const otp = process.argv.find((a) => a.startsWith("--otp="));
     const otpFlag = otp ? ` ${otp}` : "";
-    execSync(`npm publish --access public${otpFlag}`, {
+    // --provenance enables npm OIDC trusted publishing in CI (no NPM_TOKEN needed).
+    // It is a no-op locally; use --otp=<code> for local 2FA publishing instead.
+    const provenance = process.env.GITHUB_ACTIONS ? " --provenance" : "";
+    execSync(`npm publish --access public${provenance}${otpFlag}`, {
       cwd: resolve(root, pkg),
       stdio: "inherit",
     });
