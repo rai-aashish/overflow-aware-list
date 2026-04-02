@@ -20,6 +20,7 @@ export class OverflowListController<T> {
     private itemObservers = new Map<number, ResizeObserver>();
     private moreObserver: ResizeObserver | null = null;
     private rafId: number | null = null;
+    private lastVisibleCount: number | null = null;
 
     private items: T[];
     private direction: Direction;
@@ -104,6 +105,7 @@ export class OverflowListController<T> {
         let dirty = false;
         if (partial.items !== undefined && partial.items !== this.items) {
             this.items = partial.items;
+            this.lastVisibleCount = null;
             dirty = true;
         }
         if (
@@ -118,6 +120,7 @@ export class OverflowListController<T> {
             partial.sliceFrom !== this.sliceFrom
         ) {
             this.sliceFrom = partial.sliceFrom;
+            this.lastVisibleCount = null;
             dirty = true;
         }
         if (dirty) this.scheduleRecompute();
@@ -129,25 +132,25 @@ export class OverflowListController<T> {
     recompute(): void {
         if (!this.containerEl) return;
 
-        const availableSize = getAvailableSize(this.containerEl, this.direction);
-        const gap = getGap(this.containerEl, this.direction);
+        // Single getComputedStyle + getBoundingClientRect call shared by both helpers.
+        const style = getComputedStyle(this.containerEl);
+        const rect = this.containerEl.getBoundingClientRect();
+        const availableSize = getAvailableSize(this.containerEl, this.direction, style, rect);
+        const gap = getGap(this.containerEl, this.direction, style);
+
+        // Hoist direction check so it isn't re-evaluated for every item.
+        const isHorizontal = this.direction === "horizontal";
 
         const sizes = this.items.map((_, i) => {
             const el = this.itemEls.get(i);
             if (!el) return 0;
-            const rect = el.getBoundingClientRect();
-            return Math.ceil(
-                this.direction === "horizontal" ? rect.width : rect.height,
-            );
+            const r = el.getBoundingClientRect();
+            return Math.ceil(isHorizontal ? r.width : r.height);
         });
 
         const moreRect = this.moreEl?.getBoundingClientRect();
         const moreSize = moreRect
-            ? Math.ceil(
-                  this.direction === "horizontal"
-                      ? moreRect.width
-                      : moreRect.height,
-              )
+            ? Math.ceil(isHorizontal ? moreRect.width : moreRect.height)
             : 0;
 
         const visibleCount = computeVisibleCount(
@@ -156,6 +159,11 @@ export class OverflowListController<T> {
             moreSize,
             gap,
         );
+
+        // Skip re-render when the visible/hidden split hasn't changed.
+        if (visibleCount === this.lastVisibleCount) return;
+        this.lastVisibleCount = visibleCount;
+
         const slice = computeSlice(this.items, visibleCount, this.sliceFrom);
         this.onStateChange({ ...slice, measured: true });
     }

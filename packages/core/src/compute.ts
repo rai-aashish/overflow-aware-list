@@ -3,31 +3,46 @@ import type { Direction, SliceFrom } from "./types.js";
 /**
  * Returns the inner content size of `el` along `direction`,
  * excluding padding and border.
+ *
+ * Pass a pre-computed `style` / `rect` to avoid redundant DOM calls when the
+ * caller already has them (e.g. when calling getAvailableSize and getGap together).
  */
-export function getAvailableSize(el: HTMLElement, direction: Direction): number {
-    const style = getComputedStyle(el);
-    const rect = el.getBoundingClientRect();
+export function getAvailableSize(
+    el: HTMLElement,
+    direction: Direction,
+    style?: CSSStyleDeclaration,
+    rect?: DOMRect,
+): number {
+    const s = style ?? getComputedStyle(el);
+    const r = rect ?? el.getBoundingClientRect();
     if (direction === "horizontal") {
-        const pl = parseFloat(style.paddingLeft) || 0;
-        const pr = parseFloat(style.paddingRight) || 0;
-        const bl = parseFloat(style.borderLeftWidth) || 0;
-        const br = parseFloat(style.borderRightWidth) || 0;
-        return rect.width - pl - pr - bl - br;
+        const pl = parseFloat(s.paddingLeft) || 0;
+        const pr = parseFloat(s.paddingRight) || 0;
+        const bl = parseFloat(s.borderLeftWidth) || 0;
+        const br = parseFloat(s.borderRightWidth) || 0;
+        return r.width - pl - pr - bl - br;
     }
-    const pt = parseFloat(style.paddingTop) || 0;
-    const pb = parseFloat(style.paddingBottom) || 0;
-    const bt = parseFloat(style.borderTopWidth) || 0;
-    const bb = parseFloat(style.borderBottomWidth) || 0;
-    return rect.height - pt - pb - bt - bb;
+    const pt = parseFloat(s.paddingTop) || 0;
+    const pb = parseFloat(s.paddingBottom) || 0;
+    const bt = parseFloat(s.borderTopWidth) || 0;
+    const bb = parseFloat(s.borderBottomWidth) || 0;
+    return r.height - pt - pb - bt - bb;
 }
 
 /**
  * Returns the gap between flex/grid children along `direction`.
  * Returns 0 for "normal" or unparseable values.
+ *
+ * Pass a pre-computed `style` to avoid a redundant DOM call when the caller
+ * already has one (e.g. when calling getAvailableSize and getGap together).
  */
-export function getGap(el: HTMLElement, direction: Direction): number {
-    const style = getComputedStyle(el);
-    const raw = direction === "horizontal" ? style.columnGap : style.rowGap;
+export function getGap(
+    el: HTMLElement,
+    direction: Direction,
+    style?: CSSStyleDeclaration,
+): number {
+    const s = style ?? getComputedStyle(el);
+    const raw = direction === "horizontal" ? s.columnGap : s.rowGap;
     if (!raw || raw === "normal") return 0;
     return parseFloat(raw) || 0;
 }
