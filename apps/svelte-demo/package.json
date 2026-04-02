@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@overflow-aware-list/svelte": "workspace:*",
+    "@overflow-aware-list/svelte": "^0.2.0",
     "@tailwindcss/vite": "^4.2.2",
     "bits-ui": "^2.16.5",
     "clsx": "^2.1.1",

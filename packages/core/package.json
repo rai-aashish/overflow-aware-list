@@ -1,6 +1,6 @@
 {
   "name": "@overflow-aware-list/core",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Framework-agnostic core logic for overflow-aware list",
   "type": "module",
   "main": "./dist/index.js",

@@ -10,7 +10,8 @@
     "test": "bun run --filter '*' test",
     "typecheck": "bun run --filter '*' typecheck",
     "clean": "bun run --filter '*' clean",
-    "prepare": "husky"
+    "prepare": "husky",
+    "publish-packages": "node scripts/publish.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",
