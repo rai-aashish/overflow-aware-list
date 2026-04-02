@@ -25,7 +25,7 @@ function Toolbar({ actions }: { actions: Action[] }) {
 
   return (
     <OverflowList
-      renderAs="nav"
+      as="nav"
       items={actions}
       className="gap-1"
       renderItem={(action, i) => (
@@ -33,7 +33,7 @@ function Toolbar({ actions }: { actions: Action[] }) {
           {action.label}
         </button>
       )}
-      renderMore={(hidden) => (
+      renderOverflow={(hidden) => (
         <div style={{ position: "relative" }}>
           <button onClick={() => setOpen(o => !o)}>
             +{hidden.length} more
@@ -64,15 +64,15 @@ function Toolbar({ actions }: { actions: Action[] }) {
 |------|------|---------|-------------|
 | `items` | `T[]` | — | Array of items to display. |
 | `renderItem` | `(item: T, index: number) => ReactNode` | — | Renders a single visible item. `index` is the item's original position in `items`. |
-| `renderMore` | `(hidden: T[]) => ReactNode` | — | Renders the overflow indicator. Receives the array of hidden items. Also rendered off-screen with `[]` so its size is always measured. |
+| `renderOverflow` | `(hidden: T[]) => ReactNode` | — | Renders the overflow indicator. Receives the array of hidden items. Also rendered off-screen with `[]` so its size is always measured. |
 | `direction` | `"horizontal" \| "vertical"` | `"horizontal"` | Layout axis. |
-| `sliceFrom` | `"start" \| "end"` | `"start"` | Which end to keep visible. `"start"` keeps the first N items (badge at end). `"end"` keeps the last N items (badge at start — useful for breadcrumbs). |
-| `renderAs` | `keyof JSX.IntrinsicElements` | `"div"` | HTML tag for the container element. Generic — rest props and `ref` narrow to match the chosen tag. |
+| `keepFrom` | `"start" \| "end"` | `"start"` | Which end to keep visible. `"start"` keeps the first N items (badge at end). `"end"` keeps the last N items (badge at start — useful for breadcrumbs). |
+| `as` | `keyof JSX.IntrinsicElements` | `"div"` | HTML tag for the container element. Generic — rest props and `ref` narrow to match the chosen tag. |
 | `ref` | `Ref<HTMLElementTagNameMap[As]>` | — | Forwarded ref to the container element. Merged with the internal controller ref. |
 | `className` | `string` | — | CSS class forwarded to the container. Applied to the measurement layer too, so gap and font styles are accounted for in size calculations. |
 | `style` | `CSSProperties` | — | Inline style forwarded to the container. Also applied to the measurement layer. |
 
-All other props are spread onto the container element and are typed to match `renderAs`.
+All other props are spread onto the container element and are typed to match `as`.
 
 ### Forced container styles
 
@@ -94,19 +94,19 @@ Set `gap` via `className` or `style` — the controller reads it from computed s
 
 ## Examples
 
-### Breadcrumb (sliceFrom="end")
+### Breadcrumb (keepFrom="end")
 
 ```tsx
 <OverflowList
   items={crumbs}
-  sliceFrom="end"
+  keepFrom="end"
   renderItem={(crumb, i) => (
     <span key={i}>
       {i > 0 && <span>/</span>}
       {crumb}
     </span>
   )}
-  renderMore={(hidden) => <span>/…{hidden.length}/</span>}
+  renderOverflow={(hidden) => <span>/…{hidden.length}/</span>}
 />
 ```
 
@@ -118,7 +118,7 @@ Set `gap` via `className` or `style` — the controller reads it from computed s
     items={notifications}
     direction="vertical"
     renderItem={(n, i) => <div key={i}>{n.text}</div>}
-    renderMore={(hidden) => <div>+{hidden.length} more</div>}
+    renderOverflow={(hidden) => <div>+{hidden.length} more</div>}
     className="gap-2"
   />
 </div>
@@ -130,11 +130,11 @@ Set `gap` via `className` or `style` — the controller reads it from computed s
 const ref = useRef<HTMLElement>(null);
 
 <OverflowList
-  renderAs="nav"
+  as="nav"
   ref={ref}
   items={links}
   renderItem={(l, i) => <a key={i} href={l.href}>{l.label}</a>}
-  renderMore={(hidden) => <span>+{hidden.length}</span>}
+  renderOverflow={(hidden) => <span>+{hidden.length}</span>}
 />
 ```
 
@@ -143,7 +143,7 @@ const ref = useRef<HTMLElement>(null);
 ## How it works
 
 1. All items render invisibly off-screen at natural size. A `ResizeObserver` tracks each one.
-2. Available container size minus the `renderMore` element size = how many items fit.
+2. Available container size minus the `renderOverflow` element size = how many items fit.
 3. On any size change the controller recomputes the visible slice and triggers a re-render.
 4. SSR renders all items; the client trims after the first `ResizeObserver` callback.
 

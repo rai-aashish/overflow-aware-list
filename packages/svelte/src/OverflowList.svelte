@@ -9,11 +9,11 @@
     > & {
         items: T[];
         direction?: Direction;
-        sliceFrom?: SliceFrom;
+        keepFrom?: SliceFrom;
         renderItem: Snippet<[T, number]>;
-        renderMore: Snippet<[T[]]>;
+        renderOverflow: Snippet<[T[]]>;
         /** HTML tag for the outer container element. Default: "div". */
-        renderAs?: Tag;
+        as?: Tag;
         /** HTML tag for each item wrapper element. Default: "div". */
         itemTag?: string;
         class?: string;
@@ -28,10 +28,10 @@
     let {
         items,
         direction = "horizontal",
-        sliceFrom = "start",
+        keepFrom = "start",
         renderItem,
-        renderMore,
-        renderAs = "div" as Tag,
+        renderOverflow,
+        as = "div" as Tag,
         itemTag = "div",
         class: className,
         ref = $bindable(null),
@@ -40,13 +40,15 @@
 
     // Renamed from `state` to avoid collision with the $state rune.
     // Initialize with all items so SSR renders the full list; client trims after measuring.
-    let listState: OverflowListState<T> = $state({
+    // untrack: items is a prop and reactive, but we only want the initial value here;
+    // the controller keeps listState in sync via onStateChange.
+    let listState: OverflowListState<T> = $state(untrack(() => ({
         visibleItems: items as T[],
         hiddenItems: [] as T[],
         isOverflowing: false,
         startIndex: 0,
         measured: false,
-    });
+    })));
 
     // untrack: constructor intentionally captures initial prop values only;
     // $effect below keeps the controller in sync with subsequent changes.
@@ -55,7 +57,7 @@
             new OverflowListController<T>({
                 items,
                 direction,
-                sliceFrom,
+                sliceFrom: keepFrom,
                 onStateChange: (next) => {
                     listState = next;
                 },
@@ -64,7 +66,7 @@
 
     // Keep controller in sync with prop changes
     $effect(() => {
-        controller.updateOptions({ items, direction, sliceFrom });
+        controller.updateOptions({ items, direction, sliceFrom: keepFrom });
     });
 
     // Wire container element
@@ -94,7 +96,7 @@
 <!-- Visible container: SSR renders all items; client trims to what fits -->
 <!-- restProps spread first so our layout-critical style: directives always win -->
 <svelte:element
-    this={renderAs}
+    this={as}
     bind:this={ref}
     {...(restProps as any)}
     data-slot="overflow-list"
@@ -107,16 +109,16 @@
     style:width={direction === "horizontal" ? "100%" : undefined}
     style:height={direction === "vertical" ? "100%" : undefined}
 >
-    {#if listState.isOverflowing && sliceFrom === "end"}
-        {@render renderMore(listState.hiddenItems)}
+    {#if listState.isOverflowing && keepFrom === "end"}
+        {@render renderOverflow(listState.hiddenItems)}
     {/if}
     {#each listState.visibleItems as item, i (listState.startIndex + i)}
         <svelte:element this={itemTag} data-overflow-item style:flex-shrink="0">
             {@render renderItem(item, listState.startIndex + i)}
         </svelte:element>
     {/each}
-    {#if listState.isOverflowing && sliceFrom === "start"}
-        {@render renderMore(listState.hiddenItems)}
+    {#if listState.isOverflowing && keepFrom === "start"}
+        {@render renderOverflow(listState.hiddenItems)}
     {/if}
 </svelte:element>
 
@@ -142,6 +144,6 @@
         </div>
     {/each}
     <div bind:this={moreEl}>
-        {@render renderMore([])}
+        {@render renderOverflow([])}
     </div>
 </div>

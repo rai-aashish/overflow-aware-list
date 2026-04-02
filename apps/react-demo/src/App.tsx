@@ -27,7 +27,7 @@ const techTags: Tag[] = [
     { label: "Remix", bg: "#e8ff5a", fg: "#000" },
 ];
 
-// ── Demo 2: Breadcrumb (sliceFrom="end") ──────────────────────────────────
+// ── Demo 2: Breadcrumb (keepFrom="end") ──────────────────────────────────
 type Crumb = { label: string };
 const crumbs: Crumb[] = [
     { label: "~" },
@@ -70,7 +70,7 @@ export default function App() {
             <nav>
                 <span className="nav-name">@overflow-aware-list/react</span>
                 <div className="nav-links">
-                    <span className="badge">v0.1.0</span>
+                    <span className="badge">v0.2.0</span>
                     <a href={LINKS.github} target="_blank" rel="noopener">GitHub</a>
                     <a href={LINKS.npmReact} target="_blank" rel="noopener">npm</a>
                 </div>
@@ -98,7 +98,7 @@ export default function App() {
                     <div className="demo-num">01</div>
                     <div>
                         <div className="demo-title">Tags</div>
-                        <div className="demo-meta">direction=horizontal · sliceFrom=start</div>
+                        <div className="demo-meta">direction=horizontal · keepFrom=start</div>
                     </div>
                 </div>
                 <p className="demo-desc">
@@ -115,14 +115,14 @@ export default function App() {
                         <OverflowList
                             items={techTags}
                             direction="horizontal"
-                            sliceFrom="start"
+                            keepFrom="start"
                             className="gap-8"
                             renderItem={(tag) => (
                                 <span className="tag" style={{ background: tag.bg, color: tag.fg }}>
                                     {tag.label}
                                 </span>
                             )}
-                            renderMore={(hidden) => (
+                            renderOverflow={(hidden) => (
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <button className="more-badge">
@@ -153,11 +153,11 @@ export default function App() {
                     <div className="demo-num">02</div>
                     <div>
                         <div className="demo-title">Breadcrumb</div>
-                        <div className="demo-meta">direction=horizontal · sliceFrom=end</div>
+                        <div className="demo-meta">direction=horizontal · keepFrom=end</div>
                     </div>
                 </div>
                 <p className="demo-desc">
-                    sliceFrom=<em>end</em> shows the <em>last</em> N items — ideal for paths and
+                    keepFrom=<em>end</em> shows the <em>last</em> N items — ideal for paths and
                     breadcrumbs where the deepest segment is most relevant.
                     Overflow indicator appears at the <em>start</em>.
                 </p>
@@ -171,7 +171,7 @@ export default function App() {
                         <OverflowList
                             items={crumbs}
                             direction="horizontal"
-                            sliceFrom="end"
+                            keepFrom="end"
                             className="gap-0"
                             renderItem={(crumb, i) => (
                                 <span className="crumb">
@@ -179,7 +179,7 @@ export default function App() {
                                     {crumb.label}
                                 </span>
                             )}
-                            renderMore={(hidden) => (
+                            renderOverflow={(hidden) => (
                                 <span className="crumb-more">
                                     <span className="crumb-sep">/</span>
                                     <span className="crumb-ellipsis">…{hidden.length}</span>
@@ -198,7 +198,7 @@ export default function App() {
                     <div className="demo-num">03</div>
                     <div>
                         <div className="demo-title">Notification feed</div>
-                        <div className="demo-meta">direction=vertical · sliceFrom=start</div>
+                        <div className="demo-meta">direction=vertical · keepFrom=start</div>
                     </div>
                 </div>
                 <p className="demo-desc">
@@ -215,7 +215,7 @@ export default function App() {
                         <OverflowList
                             items={notifs}
                             direction="vertical"
-                            sliceFrom="start"
+                            keepFrom="start"
                             className="gap-1"
                             renderItem={(notif) => (
                                 <div className={`notif notif--${notif.kind}`}>
@@ -224,7 +224,7 @@ export default function App() {
                                     <span className="notif-meta">{notif.meta}</span>
                                 </div>
                             )}
-                            renderMore={(hidden) => (
+                            renderOverflow={(hidden) => (
                                 <div className="notif-more">+{hidden.length} more</div>
                             )}
                         />

@@ -1,6 +1,6 @@
 # @overflow-aware-list/svelte
 
-> Svelte 5 component that renders only the items that physically fit inside a container. Items that overflow are hidden and passed to a `renderMore` snippet so you can show a "+N" badge, ellipsis, or any custom indicator. Supports horizontal and vertical directions, and can slice from either end of the list.
+> Svelte 5 component that renders only the items that physically fit inside a container. Items that overflow are hidden and passed to a `renderOverflow` snippet so you can show a "+N" badge, ellipsis, or any custom indicator. Supports horizontal and vertical directions, and can slice from either end of the list.
 
 - GitHub: https://github.com/rai-aashish/overflow-aware-list/tree/main/packages/svelte
 - Live demo: https://rai-aashish.github.io/overflow-aware-list/svelte
@@ -25,7 +25,7 @@ Peer dependency: `svelte >= 5`.
   {#snippet renderItem(tag)}
     <span class="tag">{tag}</span>
   {/snippet}
-  {#snippet renderMore(hidden)}
+  {#snippet renderOverflow(hidden)}
     <span class="badge">+{hidden.length}</span>
   {/snippet}
 </OverflowList>
@@ -46,7 +46,7 @@ type OverflowListProps<T> = {
    * "start" — show first N items, overflow indicator at end (default).
    * "end"   — show last N items, overflow indicator at start (useful for breadcrumbs).
    */
-  sliceFrom?: "start" | "end";
+  keepFrom?: "start" | "end";
 
   /** Snippet to render a single visible item. Receives (item, originalIndex). */
   renderItem: Snippet<[T, number]>;
@@ -55,15 +55,15 @@ type OverflowListProps<T> = {
    * Snippet to render the overflow indicator. Receives the array of hidden items.
    * Also rendered (with an empty array) in the off-screen layer so its size is accounted for.
    */
-  renderMore: Snippet<[T[]]>;
+  renderOverflow: Snippet<[T[]]>;
 
   /**
    * HTML tag for the outer container element. Default: "div".
    * Generic — rest props and `ref` are typed to match the chosen tag.
-   * @example renderAs="nav"  // ref becomes HTMLElement, restProps accepts nav attrs
-   * @example renderAs="button"  // ref becomes HTMLButtonElement, restProps accepts button attrs
+   * @example as="nav"  // ref becomes HTMLElement, restProps accepts nav attrs
+   * @example as="button"  // ref becomes HTMLButtonElement, restProps accepts button attrs
    */
-  renderAs?: Tag; // Tag extends keyof HTMLElementTagNameMap
+  as?: Tag; // Tag extends keyof HTMLElementTagNameMap
 
   /** HTML tag for each item wrapper element. Default: "div". */
   itemTag?: string;
@@ -74,7 +74,7 @@ type OverflowListProps<T> = {
   /** Bindable ref to the container element. */
   ref?: HTMLElementTagNameMap[Tag] | null;
 } & Omit<HTMLAttributes<HTMLElementTagNameMap[Tag]>, "class">;
-// Tag defaults to "div". Rest props and ref narrow automatically when renderAs is set.
+// Tag defaults to "div". Rest props and ref narrow automatically when as is set.
 // All other HTML attributes are spread onto the container element.
 ```
 
@@ -93,7 +93,7 @@ type OverflowListProps<T> = {
     {#snippet renderItem(tag)}
       <span class="tag">{tag}</span>
     {/snippet}
-    {#snippet renderMore(hidden)}
+    {#snippet renderOverflow(hidden)}
       <span class="badge">+{hidden.length}</span>
     {/snippet}
   </OverflowList>
@@ -106,7 +106,7 @@ type OverflowListProps<T> = {
 <OverflowList
   items={crumbs}
   direction="horizontal"
-  sliceFrom="end"
+  keepFrom="end"
 >
   {#snippet renderItem(crumb, i)}
     <span class="crumb">
@@ -114,7 +114,7 @@ type OverflowListProps<T> = {
       {crumb}
     </span>
   {/snippet}
-  {#snippet renderMore(hidden)}
+  {#snippet renderOverflow(hidden)}
     <span>/…{hidden.length}/</span>
   {/snippet}
 </OverflowList>
@@ -128,7 +128,7 @@ type OverflowListProps<T> = {
     {#snippet renderItem(n)}
       <div class="notif">{n.text}</div>
     {/snippet}
-    {#snippet renderMore(hidden)}
+    {#snippet renderOverflow(hidden)}
       <div>+{hidden.length} more</div>
     {/snippet}
   </OverflowList>
@@ -138,9 +138,9 @@ type OverflowListProps<T> = {
 ### Custom container tag (e.g. `<nav>`, `<ul>`)
 
 ```svelte
-<OverflowList items={crumbs} renderAs="nav" itemTag="span">
+<OverflowList items={crumbs} as="nav" itemTag="span">
   {#snippet renderItem(crumb)}...{/snippet}
-  {#snippet renderMore(hidden)}...{/snippet}
+  {#snippet renderOverflow(hidden)}...{/snippet}
 </OverflowList>
 ```
 
@@ -158,7 +158,7 @@ type OverflowListProps<T> = {
 
 ## Styling
 
-The component renders a `<{renderAs} data-slot="overflow-list">` as the container. It forces these styles via `style:` directives (you cannot override them via `style` prop):
+The component renders a `<{as} data-slot="overflow-list">` as the container. It forces these styles via `style:` directives (you cannot override them via `style` prop):
 
 ```
 display: flex

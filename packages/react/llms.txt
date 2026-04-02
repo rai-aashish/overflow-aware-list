@@ -21,7 +21,7 @@ import { OverflowList } from "@overflow-aware-list/react";
 <OverflowList
   items={tags}
   renderItem={(tag, i) => <span key={i} className="tag">{tag.label}</span>}
-  renderMore={(hidden) => <span className="badge">+{hidden.length}</span>}
+  renderOverflow={(hidden) => <span className="badge">+{hidden.length}</span>}
 />
 ```
 
@@ -42,7 +42,7 @@ type OverflowListProps<T> = {
    * "start" — show first N items, overflow indicator at end (default).
    * "end"   — show last N items, overflow indicator at start (useful for breadcrumbs).
    */
-  sliceFrom?: "start" | "end";
+  keepFrom?: "start" | "end";
 
   /** Render a single visible item. Receives the item and its original index in `items`. */
   renderItem: (item: T, index: number) => ReactNode;
@@ -52,16 +52,16 @@ type OverflowListProps<T> = {
    * Also rendered (with an empty array) in the off-screen measurement layer
    * so its size is always accounted for.
    */
-  renderMore: (hidden: T[]) => ReactNode;
+  renderOverflow: (hidden: T[]) => ReactNode;
   /**
    * HTML tag for the outer container element. Default: "div".
    * Generic — rest props and ref narrow to match the chosen tag.
-   * @example renderAs="nav"     // ref: HTMLElement, restProps: nav attrs
-   * @example renderAs="button"  // ref: HTMLButtonElement, restProps: button attrs
+   * @example as="nav"     // ref: HTMLElement, restProps: nav attrs
+   * @example as="button"  // ref: HTMLButtonElement, restProps: button attrs
    */
-  renderAs?: As;
+  as?: As;
 } & Omit<HTMLAttributes<HTMLElementTagNameMap[As]>, "children">;
-// As defaults to "div". Rest props and ref narrow automatically when renderAs is set.
+// As defaults to "div". Rest props and ref narrow automatically when as is set.
 // ref is forwarded — pass a ref object or callback ref and it merges with the internal controller ref.
 ```
 
@@ -76,7 +76,7 @@ const tags = ["React", "TypeScript", "Vite", "Tailwind", "Zustand"];
   <OverflowList
     items={tags}
     renderItem={(tag) => <span className="tag">{tag}</span>}
-    renderMore={(hidden) => <span className="badge">+{hidden.length}</span>}
+    renderOverflow={(hidden) => <span className="badge">+{hidden.length}</span>}
   />
 </div>
 ```
@@ -89,14 +89,14 @@ const crumbs = ["~", "projects", "overflow-aware-list", "packages", "core"];
 <OverflowList
   items={crumbs}
   direction="horizontal"
-  sliceFrom="end"
+  keepFrom="end"
   renderItem={(crumb, i) => (
     <span className="crumb">
       {i > 0 && <span>/</span>}
       {crumb}
     </span>
   )}
-  renderMore={(hidden) => <span>/…{hidden.length}/</span>}
+  renderOverflow={(hidden) => <span>/…{hidden.length}/</span>}
 />
 ```
 
@@ -108,7 +108,7 @@ const crumbs = ["~", "projects", "overflow-aware-list", "packages", "core"];
     items={notifications}
     direction="vertical"
     renderItem={(n) => <div className="notif">{n.text}</div>}
-    renderMore={(hidden) => <div>+{hidden.length} more</div>}
+    renderOverflow={(hidden) => <div>+{hidden.length} more</div>}
   />
 </div>
 ```
@@ -119,11 +119,11 @@ const crumbs = ["~", "projects", "overflow-aware-list", "packages", "core"];
 const navRef = useRef<HTMLElement>(null);
 
 <OverflowList
-  renderAs="nav"
+  as="nav"
   ref={navRef}
   items={crumbs}
   renderItem={(c) => <span>{c}</span>}
-  renderMore={(h) => <span>+{h.length}</span>}
+  renderOverflow={(h) => <span>+{h.length}</span>}
 />
 ```
 
@@ -132,7 +132,7 @@ const navRef = useRef<HTMLElement>(null);
 ```tsx
 const ref = useRef<HTMLDivElement>(null);
 
-<OverflowList ref={ref} items={tags} renderItem={...} renderMore={...} />
+<OverflowList ref={ref} items={tags} renderItem={...} renderOverflow={...} />
 ```
 
 ### Hide content until measured (no layout flash)
@@ -148,7 +148,7 @@ const ref = useRef<HTMLDivElement>(null);
 
 ## Styling
 
-The component renders a `<{renderAs} data-slot="overflow-list">` as the container (default `<div>`). It forces these styles (you cannot override them):
+The component renders a `<{as} data-slot="overflow-list">` as the container (default `<div>`). It forces these styles (you cannot override them):
 
 ```
 display: flex

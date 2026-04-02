@@ -29,7 +29,7 @@
     ];
     let tagsWidth = $state(65);
 
-    // ── Demo 2: Breadcrumb (sliceFrom="end") ──────────────────────────────
+    // ── Demo 2: Breadcrumb (keepFrom="end") ──────────────────────────────
     type Crumb = { label: string };
     const crumbs: Crumb[] = [
         { label: "~" },
@@ -70,7 +70,7 @@
     <nav>
         <span class="nav-name">@overflow-aware-list/svelte</span>
         <div class="nav-links">
-            <span class="badge">v0.1.0</span>
+            <span class="badge">v0.2.0</span>
             <a href={LINKS.github} target="_blank" rel="noopener">GitHub</a>
             <a href={LINKS.npmSvelte} target="_blank" rel="noopener">npm</a>
         </div>
@@ -98,7 +98,7 @@
             <div class="demo-num">01</div>
             <div>
                 <div class="demo-title">Tags</div>
-                <div class="demo-meta">direction=horizontal · sliceFrom=start</div>
+                <div class="demo-meta">direction=horizontal · keepFrom=start</div>
             </div>
         </div>
         <p class="demo-desc">
@@ -117,7 +117,7 @@
                 <OverflowList
                     items={techTags}
                     direction="horizontal"
-                    sliceFrom="start"
+                    keepFrom="start"
                     class="gap-8"
                 >
                     {#snippet renderItem(tag)}
@@ -125,7 +125,7 @@
                             {tag.label}
                         </span>
                     {/snippet}
-                    {#snippet renderMore(hidden)}
+                    {#snippet renderOverflow(hidden)}
                         <Popover.Root>
                             <Popover.Trigger>
                                 {#snippet child({ props })}
@@ -183,7 +183,7 @@
                 <OverflowList
                     items={crumbs}
                     direction="horizontal"
-                    sliceFrom="end"
+                    keepFrom="end"
                     class="gap-0"
                 >
                     {#snippet renderItem(crumb, i)}
@@ -192,7 +192,7 @@
                             {crumb.label}
                         </span>
                     {/snippet}
-                    {#snippet renderMore(hidden)}
+                    {#snippet renderOverflow(hidden)}
                         <span class="crumb-more">
                             <span class="crumb-sep">/</span>
                             <span class="crumb-ellipsis">…{hidden.length}</span>
@@ -230,7 +230,7 @@
                 <OverflowList
                     items={notifs}
                     direction="vertical"
-                    sliceFrom="start"
+                    keepFrom="start"
                     class="gap-1"
                 >
                     {#snippet renderItem(notif)}
@@ -240,7 +240,7 @@
                             <span class="notif-meta">{notif.meta}</span>
                         </div>
                     {/snippet}
-                    {#snippet renderMore(hidden)}
+                    {#snippet renderOverflow(hidden)}
                         <div class="notif-more">
                             +{hidden.length} more
                         </div>

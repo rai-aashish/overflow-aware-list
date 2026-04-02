@@ -54,7 +54,7 @@ import { OverflowList } from "@overflow-aware-list/react";
 <OverflowList
   items={tags}
   renderItem={(tag) => <span className="tag">{tag}</span>}
-  renderMore={(hidden) => <span>+{hidden.length}</span>}
+  renderOverflow={(hidden) => <span>+{hidden.length}</span>}
 />
 ```
 
@@ -67,7 +67,7 @@ import { OverflowList } from "@overflow-aware-list/react";
 
 <OverflowList items={tags}>
   {#snippet renderItem(tag)}<span class="tag">{tag}</span>{/snippet}
-  {#snippet renderMore(hidden)}<span>+{hidden.length}</span>{/snippet}
+  {#snippet renderOverflow(hidden)}<span>+{hidden.length}</span>{/snippet}
 </OverflowList>
 ```
 

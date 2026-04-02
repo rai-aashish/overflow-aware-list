@@ -34,7 +34,7 @@ export type OverflowListProps<T, As extends keyof React.JSX.IntrinsicElements = 
      * "start" — show first N items, overflow indicator at end (default).
      * "end"   — show last N items, overflow indicator at start.
      */
-    sliceFrom?: SliceFrom;
+    keepFrom?: SliceFrom;
     /** Render a single visible item. Receives the item and its original index. */
     renderItem: (item: T, index: number) => ReactNode;
     /**
@@ -42,14 +42,14 @@ export type OverflowListProps<T, As extends keyof React.JSX.IntrinsicElements = 
      * Also rendered (with an empty array) in the off-screen layer so its size
      * is always accounted for.
      */
-    renderMore: (hidden: T[]) => ReactNode;
+    renderOverflow: (hidden: T[]) => ReactNode;
     /**
      * HTML tag for the outer container element. Default: "div".
      * Generic — rest props and ref narrow to match the chosen tag.
-     * @example renderAs="nav"     // ref: HTMLElement, restProps: nav attrs
-     * @example renderAs="button"  // ref: HTMLButtonElement, restProps: button+button attrs
+     * @example as="nav"     // ref: HTMLElement, restProps: nav attrs
+     * @example as="button"  // ref: HTMLButtonElement, restProps: button+button attrs
      */
-    renderAs?: As;
+    as?: As;
 };
 
 // forwardRef with a generic signature requires a cast to preserve the generics
@@ -62,10 +62,10 @@ const OverflowListInner = forwardRef(function OverflowList<
     {
         items,
         direction = "horizontal",
-        sliceFrom = "start",
+        keepFrom = "start",
         renderItem,
-        renderMore,
-        renderAs,
+        renderOverflow,
+        as,
         className,
         style,
         ...restProps
@@ -95,7 +95,7 @@ const OverflowListInner = forwardRef(function OverflowList<
         const controller = new OverflowListController<T>({
             items,
             direction,
-            sliceFrom,
+            sliceFrom: keepFrom,
             onStateChange: setListState,
         });
         controllerRef.current = controller;
@@ -110,8 +110,8 @@ const OverflowListInner = forwardRef(function OverflowList<
 
     // Keep controller in sync with prop changes
     useEffect(() => {
-        controllerRef.current?.updateOptions({ items, direction, sliceFrom });
-    }, [items, direction, sliceFrom]);
+        controllerRef.current?.updateOptions({ items, direction, sliceFrom: keepFrom });
+    }, [items, direction, keepFrom]);
 
     const internalContainerRef = useCallback((el: HTMLElement | null) => {
         containerElRef.current = el;
@@ -154,7 +154,7 @@ const OverflowListInner = forwardRef(function OverflowList<
     };
 
     // Cast needed for JSX dynamic tag; type safety is enforced at the props level.
-    const Tag = (renderAs ?? "div") as React.ElementType;
+    const Tag = (as ?? "div") as React.ElementType;
 
     return (
         <>
@@ -166,13 +166,13 @@ const OverflowListInner = forwardRef(function OverflowList<
                 data-slot="overflow-list"
                 style={containerStyle}
             >
-                {isOverflowing && sliceFrom === "end" && renderMore(hiddenItems)}
+                {isOverflowing && keepFrom === "end" && renderOverflow(hiddenItems)}
                 {visibleItems.map((item, i) => (
                     <div key={startIndex + i} data-overflow-item style={{ flexShrink: 0 }}>
                         {renderItem(item, startIndex + i)}
                     </div>
                 ))}
-                {isOverflowing && sliceFrom === "start" && renderMore(hiddenItems)}
+                {isOverflowing && keepFrom === "start" && renderOverflow(hiddenItems)}
             </Tag>
 
             {/* Off-screen measurement layer — mirrors className/style from the container so
@@ -198,7 +198,7 @@ const OverflowListInner = forwardRef(function OverflowList<
                         {renderItem(item, i)}
                     </div>
                 ))}
-                <div ref={moreRef}>{renderMore([])}</div>
+                <div ref={moreRef}>{renderOverflow([])}</div>
             </div>
         </>
     );
