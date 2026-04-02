@@ -1,6 +1,6 @@
 {
   "name": "@overflow-aware-list/svelte",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Svelte 5 component for overflow-aware list",
   "type": "module",
   "svelte": "./src/index.ts",
